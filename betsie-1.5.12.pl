@@ -1,12 +1,12 @@
 #!/usr/local/bin/perl -Tw
 
-# parser.pl v 1.5.11
+# parser.pl v 1.5.12
 # by wayne.myers@bbc.co.uk (et al)
 # Enormous thanks to:
-# Chay Palton, Damion Yates, Matt Blakemore,
+# Chay Palton, Damion Yates, George Auckland,
 # Dan Tagg, T.V. Raman, Mark Foster, Peter Burden,
 # Jack Evans, Steve at wels.net, Gene D., Maurice Walshe
-# and many others.
+# Mark A. Rowe and many others.
 
 # parser.pl aka BETSIE is Copyright 1998 - 2001 BBC Digital Media
 # See LICENCE for full licence details
@@ -19,7 +19,7 @@ use strict;
 
 # variables
 
-my $version = "1.5.11";	# version number
+my $version = "1.5.12";	# version number
 my @x = ();         	# all the lines of the html page we're parsing
 my $contents = "";  	# @x concatenated
 my $inpath = "";    	# path_info string from which we get the rest
@@ -60,8 +60,8 @@ my $name = $ENV{'SCRIPT_NAME'};		# name of this file
 $name =~ s/^.*\/(\w\.+)$/$1/;
 my $agent = $ENV{'HTTP_USER_AGENT'};	# pretend to be the calling browser
 
-my $allowchars = '[a-zA-Z0-9_.\-\/\#\?\&\=\%\~\+]'; # allowed characters
-my $alarm = 10;  # number of seconds before we time out
+my $allowchars = '[a-zA-Z0-9_.\-\/\#\?\&\=\%\~\+\:]'; # allowed characters
+my $alarm = 20;  # number of seconds before we time out
 
 # variables for colour/font settings etc
 # be sure to amend make_body() if you amend them
@@ -125,6 +125,7 @@ if ($ENV{'REQUEST_METHOD'} eq "POST") {
 	$method = "POST";
 	
     }
+
 }
 
 # take path info or referer allowing easy linking in...
@@ -182,7 +183,7 @@ if ($cookies =~ s/Betsie-auth=([A-Za-z0-9\+\=\/]*?)\;//s) {
 # if query string contains our betsie-pi parameter
 # this is an attempt to authorise ourselves on a page
 # if it isn't really, the following will simply fail...
-if($qs =~ /betsie-pi=/) {
+if($postdata =~ /betsie-pi=/) {
 
     # set a cookie with the auth string
     my ($authcook, $authloc) = make_auth_cookie_and_loc($file);
@@ -220,7 +221,7 @@ $count = 0;
 	 exit;
      }
      
-     if ($ENV{'QUERY_STRING'} ne "") { $file .= "\?$ENV{'QUERY_STRING'}" }
+     if ($qs ne "") { $file .= "\?$qs" }
      
      @x = graburl($root, $path . $file);
 
@@ -432,7 +433,7 @@ sub make_auth_cookie_and_loc {
     my $str;
     my %pa;
 
-    %pa  = parse_parms($qs);
+    %pa  = parse_parms($postdata);
 
     $str = base64encode($pa{'betsie-u'}.":".$pa{'betsie-p'});
 
@@ -462,7 +463,7 @@ browser's 'back' button to go back.
 
 <p>$basic_realm
 
-<form action="$pathtoparser" method="GET">
+<form action="$pathtoparser" method="POST">
 
 <input type="hidden" name="betsie-pi" value="$root$path$file">
 
@@ -554,6 +555,12 @@ sub error {
     if ($nocontenttype == 1) {
 	print "Content-Type: text/html\n\n";
     }
+
+    # Beat cross-site scripting vulnerability
+    # All data from outside must have all tags removed
+    ($root, $path, $file, $contents, $inpath, $x[0]) =
+      map { s/<.*?>//gs; $_; } ($root, $path, $file, $contents, $inpath, $x[0]);
+
 
 print <<HTMLERR;
 <html>
@@ -1399,3 +1406,102 @@ documentation for details.
     return $b;
     
 }
+
+
+__END__
+
+
+=head1 NAME
+
+Betsie - the BBC Education Text To Speech Internet Enhancer
+
+=head1 DESCRIPTION
+
+Betsie is a simple CGI filter to improve the accessibility of arbitrary valid HTML pages.
+
+=head1 README
+
+Betsie is a simple CGI filter to improve the accessibility of arbitrary valid HTML pages. It
+effectively creates an on-the-fly text-only version of your site.
+
+For full details of how to use and install Betsie, please refer to the following URL:
+
+http://www.bbc.co.uk/education/betsie/readme.txt
+
+For full details of Betsie's current functionality, contact details, etc etc etc, 
+visit the Betsie website: http://www.bbc.co.uk/education/betsie/
+
+=head1 LICENCE
+
+For full details of the licence arrangements for Betsie, please refer to the following URL:
+
+http://www.bbc.co.uk/education/betsie/licence.txt
+
+Executive summary - it's free if you want to use it but you can't sell it.
+
+=head1 PREREQUISITES
+
+This script requires the C<socket> module.
+
+=head1 AUTHOR
+
+Wayne Myers - wayne.myers@bbc.co.uk
+
+=pod OSNAMES
+
+any
+
+=pod SCRIPT CATEGORIES
+
+CGI/Filter
+Web
+
+=cut
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
